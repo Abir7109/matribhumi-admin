@@ -142,3 +142,32 @@ export async function getAnalyticsSummary(sinceHours = 168): Promise<{ since: st
   const res = await fetch(`${BASE}/events/admin/summary?sinceHours=${sinceHours}`, { headers: headers() });
   return json(res);
 }
+
+export type AnalyticsSeriesRow = {
+  bucket: string;
+  page_view: number;
+  package_view: number;
+  booking_submit: number;
+  whatsapp_open: number;
+};
+
+export type AnalyticsReport = {
+  since: string;
+  sinceHours: number;
+  bucket: 'hour' | 'day';
+  summary: Record<string, number>;
+  uniqueVisitors: number;
+  series: AnalyticsSeriesRow[];
+  topPages: { path: string; count: number }[];
+  topPackages: { packageId: string; count: number }[];
+};
+
+export async function getAnalyticsReport(params: { sinceHours: number; bucket: 'hour' | 'day'; limit?: number }): Promise<AnalyticsReport> {
+  const q = new URLSearchParams();
+  q.set('sinceHours', String(params.sinceHours));
+  q.set('bucket', params.bucket);
+  if (params.limit) q.set('limit', String(params.limit));
+
+  const res = await fetch(`${BASE}/events/admin/report?${q.toString()}`, { headers: headers() });
+  return json(res);
+}
