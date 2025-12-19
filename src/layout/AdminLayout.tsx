@@ -25,6 +25,12 @@ export default function AdminLayout() {
           <div>{user?.email || ''}</div>
           <div>{user?.role || ''}</div>
           <button onClick={logout} style={{ marginTop: 10 }}>Logout</button>
+
+          <div style={{ marginTop: 16, borderTop: '1px solid rgba(0,0,0,0.10)', paddingTop: 12 }}>
+            <div style={{ fontWeight: 700, color: 'rgba(0,0,0,0.70)' }}>Creator</div>
+            <div>Rahikul Makhtum Abir</div>
+            <a href="mailto:rahikulmakhtum147@gmail.com">rahikulmakhtum147@gmail.com</a>
+          </div>
         </div>
       </aside>
 
