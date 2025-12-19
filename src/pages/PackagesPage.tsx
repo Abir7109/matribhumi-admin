@@ -111,6 +111,45 @@ export default function PackagesPage() {
   );
 }
 
+const INCLUSION_OPTIONS = [
+  'Flight',
+  'Hotel 3★',
+  'Hotel 4★',
+  'Hotel 5★',
+  'Transport',
+  'Guidance',
+  '24/7 Support',
+  'Ziyarat (selected)',
+  'VIP Transport',
+  'Meals (as per package)',
+  'Group Briefing'
+] as const;
+
+const EXCLUSION_OPTIONS = [
+  'Personal expenses',
+  'Visa fees (if applicable)',
+  'Optional tours',
+  'Extra luggage',
+  'Vaccination fees (if applicable)'
+] as const;
+
+function splitLines(text: string) {
+  return text
+    .split(/\r?\n/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+function unique(list: string[]) {
+  return Array.from(new Set(list));
+}
+
+type CustomItem = { id: string; text: string; selected: boolean };
+
+function makeId() {
+  return `${Date.now()}_${Math.random().toString(16).slice(2)}`;
+}
+
 function PackageEditor({
   initial,
   onSaved,
@@ -130,8 +169,31 @@ function PackageEditor({
   const [thumbnail, setThumbnail] = useState<string>(initial?.thumbnail || '');
 
   const [badgesText, setBadgesText] = useState<string>((initial?.badges || []).join('\n'));
-  const [inclusionsText, setInclusionsText] = useState<string>((initial?.inclusions || []).join('\n'));
-  const [exclusionsText, setExclusionsText] = useState<string>((initial?.exclusions || []).join('\n'));
+
+  const initialInclusions = initial?.inclusions || [];
+  const initialExclusions = initial?.exclusions || [];
+
+  const [selectedInclusions, setSelectedInclusions] = useState<string[]>(
+    initialInclusions.filter((x) => (INCLUSION_OPTIONS as readonly string[]).includes(x))
+  );
+
+  const [customInclusions, setCustomInclusions] = useState<CustomItem[]>(
+    initialInclusions
+      .filter((x) => !(INCLUSION_OPTIONS as readonly string[]).includes(x))
+      .map((text) => ({ id: makeId(), text, selected: true }))
+  );
+  const [newCustomInclusion, setNewCustomInclusion] = useState('');
+
+  const [selectedExclusions, setSelectedExclusions] = useState<string[]>(
+    initialExclusions.filter((x) => (EXCLUSION_OPTIONS as readonly string[]).includes(x))
+  );
+
+  const [customExclusions, setCustomExclusions] = useState<CustomItem[]>(
+    initialExclusions
+      .filter((x) => !(EXCLUSION_OPTIONS as readonly string[]).includes(x))
+      .map((text) => ({ id: makeId(), text, selected: true }))
+  );
+  const [newCustomExclusion, setNewCustomExclusion] = useState('');
 
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -158,12 +220,6 @@ function PackageEditor({
     setError(null);
     setSaving(true);
     try {
-      const toList = (text: string) =>
-        text
-          .split(/\r?\n/)
-          .map((s) => s.trim())
-          .filter(Boolean);
-
       const payload: Omit<api.PackageDTO, '_id'> = {
         title,
         type,
@@ -172,9 +228,15 @@ function PackageEditor({
         durationDays,
         seatsAvailable,
         thumbnail,
-        badges: toList(badgesText),
-        inclusions: toList(inclusionsText),
-        exclusions: toList(exclusionsText),
+        badges: splitLines(badgesText),
+        inclusions: unique([
+          ...selectedInclusions,
+          ...customInclusions.filter((x) => x.selected).map((x) => x.text.trim()).filter(Boolean),
+        ]),
+        exclusions: unique([
+          ...selectedExclusions,
+          ...customExclusions.filter((x) => x.selected).map((x) => x.text.trim()).filter(Boolean),
+        ]),
         itinerary: initial?.itinerary || [],
         gallery: initial?.gallery || [],
       };
@@ -283,24 +345,147 @@ function PackageEditor({
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
         <div>
-          <label style={{ fontSize: 12, fontWeight: 800 }}>Inclusions (one per line)</label>
-          <textarea
-            value={inclusionsText}
-            onChange={(e) => setInclusionsText(e.target.value)}
-            rows={7}
-            style={{ width: '100%' }}
-            placeholder={'Flight\nHotel\nTransport\nGuidance'}
-          />
+          <label style={{ fontSize: 12, fontWeight: 800 }}>Inclusions</label>
+          <div style={{ marginTop: 8, display: 'grid', gap: 6 }}>
+            {(INCLUSION_OPTIONS as readonly string[]).map((opt) => (
+              <label key={opt} style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13 }}>
+                <input
+                  type="checkbox"
+                  checked={selectedInclusions.includes(opt)}
+                  onChange={(e) => {
+                    setSelectedInclusions((prev) =>
+                      e.target.checked ? [...prev, opt] : prev.filter((x) => x !== opt)
+                    );
+                  }}
+                />
+                <span>{opt}</span>
+              </label>
+            ))}
+          </div>
+
+          <div style={{ marginTop: 10, display: 'grid', gap: 8 }}>
+            <div style={{ display: 'grid', gap: 6 }}>
+              <span style={{ fontSize: 12, fontWeight: 800 }}>Add custom inclusion</span>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input
+                  value={newCustomInclusion}
+                  onChange={(e) => setNewCustomInclusion(e.target.value)}
+                  placeholder="Type and click Add"
+                  style={{ height: 40, flex: 1 }}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const text = newCustomInclusion.trim();
+                    if (!text) return;
+                    setCustomInclusions((prev) => [...prev, { id: makeId(), text, selected: true }]);
+                    setNewCustomInclusion('');
+                  }}
+                  style={{ borderRadius: 10 }}
+                >
+                  Add
+                </button>
+              </div>
+            </div>
+
+            {customInclusions.length ? (
+              <div style={{ display: 'grid', gap: 6 }}>
+                {customInclusions.map((item) => (
+                  <label key={item.id} style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13 }}>
+                    <input
+                      type="checkbox"
+                      checked={item.selected}
+                      onChange={(e) => {
+                        setCustomInclusions((prev) =>
+                          prev.map((x) => (x.id === item.id ? { ...x, selected: e.target.checked } : x))
+                        );
+                      }}
+                    />
+                    <span style={{ flex: 1 }}>{item.text}</span>
+                    <button
+                      type="button"
+                      onClick={() => setCustomInclusions((prev) => prev.filter((x) => x.id !== item.id))}
+                      style={{ borderRadius: 10 }}
+                    >
+                      ×
+                    </button>
+                  </label>
+                ))}
+              </div>
+            ) : null}
+          </div>
         </div>
+
         <div>
-          <label style={{ fontSize: 12, fontWeight: 800 }}>Exclusions (one per line)</label>
-          <textarea
-            value={exclusionsText}
-            onChange={(e) => setExclusionsText(e.target.value)}
-            rows={7}
-            style={{ width: '100%' }}
-            placeholder={'Personal expenses\nVisa fees (if applicable)'}
-          />
+          <label style={{ fontSize: 12, fontWeight: 800 }}>Exclusions</label>
+          <div style={{ marginTop: 8, display: 'grid', gap: 6 }}>
+            {(EXCLUSION_OPTIONS as readonly string[]).map((opt) => (
+              <label key={opt} style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13 }}>
+                <input
+                  type="checkbox"
+                  checked={selectedExclusions.includes(opt)}
+                  onChange={(e) => {
+                    setSelectedExclusions((prev) =>
+                      e.target.checked ? [...prev, opt] : prev.filter((x) => x !== opt)
+                    );
+                  }}
+                />
+                <span>{opt}</span>
+              </label>
+            ))}
+          </div>
+
+          <div style={{ marginTop: 10, display: 'grid', gap: 8 }}>
+            <div style={{ display: 'grid', gap: 6 }}>
+              <span style={{ fontSize: 12, fontWeight: 800 }}>Add custom exclusion</span>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input
+                  value={newCustomExclusion}
+                  onChange={(e) => setNewCustomExclusion(e.target.value)}
+                  placeholder="Type and click Add"
+                  style={{ height: 40, flex: 1 }}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const text = newCustomExclusion.trim();
+                    if (!text) return;
+                    setCustomExclusions((prev) => [...prev, { id: makeId(), text, selected: true }]);
+                    setNewCustomExclusion('');
+                  }}
+                  style={{ borderRadius: 10 }}
+                >
+                  Add
+                </button>
+              </div>
+            </div>
+
+            {customExclusions.length ? (
+              <div style={{ display: 'grid', gap: 6 }}>
+                {customExclusions.map((item) => (
+                  <label key={item.id} style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13 }}>
+                    <input
+                      type="checkbox"
+                      checked={item.selected}
+                      onChange={(e) => {
+                        setCustomExclusions((prev) =>
+                          prev.map((x) => (x.id === item.id ? { ...x, selected: e.target.checked } : x))
+                        );
+                      }}
+                    />
+                    <span style={{ flex: 1 }}>{item.text}</span>
+                    <button
+                      type="button"
+                      onClick={() => setCustomExclusions((prev) => prev.filter((x) => x.id !== item.id))}
+                      style={{ borderRadius: 10 }}
+                    >
+                      ×
+                    </button>
+                  </label>
+                ))}
+              </div>
+            ) : null}
+          </div>
         </div>
       </div>
 
