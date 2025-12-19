@@ -128,6 +128,11 @@ function PackageEditor({
   const [durationDays, setDurationDays] = useState<number>(initial?.durationDays || 10);
   const [seatsAvailable, setSeatsAvailable] = useState<number>(initial?.seatsAvailable || 0);
   const [thumbnail, setThumbnail] = useState<string>(initial?.thumbnail || '');
+
+  const [badgesText, setBadgesText] = useState<string>((initial?.badges || []).join('\n'));
+  const [inclusionsText, setInclusionsText] = useState<string>((initial?.inclusions || []).join('\n'));
+  const [exclusionsText, setExclusionsText] = useState<string>((initial?.exclusions || []).join('\n'));
+
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -153,6 +158,12 @@ function PackageEditor({
     setError(null);
     setSaving(true);
     try {
+      const toList = (text: string) =>
+        text
+          .split(/\r?\n/)
+          .map((s) => s.trim())
+          .filter(Boolean);
+
       const payload: Omit<api.PackageDTO, '_id'> = {
         title,
         type,
@@ -161,9 +172,9 @@ function PackageEditor({
         durationDays,
         seatsAvailable,
         thumbnail,
-        badges: initial?.badges || [],
-        inclusions: initial?.inclusions || [],
-        exclusions: initial?.exclusions || [],
+        badges: toList(badgesText),
+        inclusions: toList(inclusionsText),
+        exclusions: toList(exclusionsText),
         itinerary: initial?.itinerary || [],
         gallery: initial?.gallery || [],
       };
@@ -268,6 +279,40 @@ function PackageEditor({
             }}
           />
         </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        <div>
+          <label style={{ fontSize: 12, fontWeight: 800 }}>Inclusions (one per line)</label>
+          <textarea
+            value={inclusionsText}
+            onChange={(e) => setInclusionsText(e.target.value)}
+            rows={7}
+            style={{ width: '100%' }}
+            placeholder={'Flight\nHotel\nTransport\nGuidance'}
+          />
+        </div>
+        <div>
+          <label style={{ fontSize: 12, fontWeight: 800 }}>Exclusions (one per line)</label>
+          <textarea
+            value={exclusionsText}
+            onChange={(e) => setExclusionsText(e.target.value)}
+            rows={7}
+            style={{ width: '100%' }}
+            placeholder={'Personal expenses\nVisa fees (if applicable)'}
+          />
+        </div>
+      </div>
+
+      <div>
+        <label style={{ fontSize: 12, fontWeight: 800 }}>Badges (one per line)</label>
+        <textarea
+          value={badgesText}
+          onChange={(e) => setBadgesText(e.target.value)}
+          rows={4}
+          style={{ width: '100%' }}
+          placeholder={'Group\nFamily\nLimited seats'}
+        />
       </div>
 
       {error ? <div style={{ color: '#b42318' }}>{error}</div> : null}
