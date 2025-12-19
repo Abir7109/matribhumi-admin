@@ -15,6 +15,7 @@ export default function AnalyticsPage() {
 
   const [report, setReport] = useState<api.AnalyticsReport | null>(null);
   const [packageTitleById, setPackageTitleById] = useState<Record<string, string>>({});
+  const [apiNeedsDeploy, setApiNeedsDeploy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -23,11 +24,33 @@ export default function AnalyticsPage() {
       setError(null);
       setLoading(true);
       try {
-        const [rep, pkgs] = await Promise.all([
-          api.getAnalyticsReport({ sinceHours: preset.sinceHours, bucket: preset.bucket, limit: 10 }),
-          api.listPackages(),
-        ]);
+        setApiNeedsDeploy(false);
 
+        let rep: api.AnalyticsReport;
+        try {
+          rep = await api.getAnalyticsReport({ sinceHours: preset.sinceHours, bucket: preset.bucket, limit: 10 });
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : '';
+          // If the API hasn't been redeployed yet, Render will return { error: "Not Found" }.
+          if (msg.toLowerCase().includes('not found')) {
+            setApiNeedsDeploy(true);
+            const basic = await api.getAnalyticsSummary(preset.sinceHours);
+            rep = {
+              since: basic.since,
+              sinceHours: preset.sinceHours,
+              bucket: preset.bucket,
+              summary: basic.summary,
+              uniqueVisitors: 0,
+              series: [],
+              topPages: [],
+              topPackages: [],
+            };
+          } else {
+            throw err;
+          }
+        }
+
+        const pkgs = await api.listPackages();
         const map: Record<string, string> = {};
         for (const p of pkgs) map[p._id] = p.title;
 
@@ -89,6 +112,21 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
+      {apiNeedsDeploy ? (
+        <div
+          style={{
+            borderRadius: 14,
+            padding: '10px 12px',
+            background: 'rgba(255, 244, 229, 0.9)',
+            border: '1px solid rgba(255, 179, 71, 0.35)',
+            color: 'rgba(0,0,0,0.75)',
+            fontSize: 13,
+            fontWeight: 700,
+          }}
+        >
+          API update not deployed yet — showing basic analytics only. Redeploy the Render API to enable charts + top pages/packages.
+        </div>
+      ) : null}
       {error ? <div style={{ color: '#b42318' }}>{error}</div> : null}
 
       <div
