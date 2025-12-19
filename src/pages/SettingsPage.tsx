@@ -9,7 +9,7 @@ export default function SettingsPage() {
   useEffect(() => {
     api
       .getSettings()
-      .then(setSettings)
+      .then((s) => setSettings(s || {}))
       .catch((e: unknown) => {
         const msg = e instanceof Error ? e.message : 'Failed';
         setError(msg);
