@@ -28,17 +28,42 @@ export default function PackagesPage() {
 
   const selected = useMemo(() => packages.find((p) => p._id === selectedId) || null, [packages, selectedId]);
 
+  function removePackageFromList(id: string) {
+    setPackages((prev) => prev.filter((p) => p._id !== id));
+    setSelectedId(null);
+  }
+
   return (
     <div style={{ display: 'grid', gap: 14 }}>
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
         <h1 style={{ margin: 0, color: '#176B87' }}>Packages</h1>
-        <button onClick={refresh} disabled={loading}>Refresh</button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            onClick={() => {
+              setSelectedId(null);
+            }}
+            style={{ background: '#176B87', color: 'white', borderRadius: 10 }}
+          >
+            + Add package
+          </button>
+          <button onClick={refresh} disabled={loading}>Refresh</button>
+        </div>
       </div>
       {error ? <div style={{ color: '#b42318' }}>{error}</div> : null}
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         <div style={{ background: 'rgba(255,255,255,0.7)', borderRadius: 16, padding: 12 }}>
-          <div style={{ fontWeight: 800, marginBottom: 10, color: '#176B87' }}>List</div>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
+            <div style={{ fontWeight: 800, color: '#176B87' }}>List</div>
+            <button
+              onClick={() => {
+                setSelectedId(null);
+              }}
+              style={{ borderRadius: 10 }}
+            >
+              + Add
+            </button>
+          </div>
           <div style={{ display: 'grid', gap: 6 }}>
             {packages.map((p) => (
               <button
@@ -76,7 +101,8 @@ export default function PackagesPage() {
               setSelectedId(p._id);
             }}
             onArchived={(id) => {
-              setPackages((prev) => prev.map((p) => (p._id === id ? { ...p, status: 'archived' } : p)));
+              // remove from list for a simple “delete” UX (API archives server-side)
+              removePackageFromList(id);
             }}
           />
         </div>
@@ -97,7 +123,7 @@ function PackageEditor({
   const [title, setTitle] = useState(initial?.title || '');
   const [type, setType] = useState<api.PackageDTO['type']>(initial?.type || 'hajj');
   const [status, setStatus] = useState<api.PackageDTO['status']>(initial?.status || 'draft');
-  const [currency, setCurrency] = useState(initial?.price.currency || 'SAR');
+  const [currency, setCurrency] = useState(initial?.price.currency || 'BDT');
   const [amount, setAmount] = useState<number>(initial?.price.amount || 0);
   const [durationDays, setDurationDays] = useState<number>(initial?.durationDays || 10);
   const [seatsAvailable, setSeatsAvailable] = useState<number>(initial?.seatsAvailable || 0);
@@ -251,8 +277,12 @@ function PackageEditor({
           {saving ? 'Saving…' : initial?._id ? 'Save changes' : 'Create package'}
         </button>
         {initial?._id ? (
-          <button onClick={archive} disabled={saving} style={{ borderRadius: 10 }}>
-            Archive
+          <button
+            onClick={archive}
+            disabled={saving}
+            style={{ borderRadius: 10, background: '#b42318', color: 'white' }}
+          >
+            Remove package
           </button>
         ) : null}
       </div>
