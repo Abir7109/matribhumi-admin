@@ -86,6 +86,25 @@ button:disabled {
   100% { transform: scale(1.02); }
 }
 
+@keyframes mb-grid-pan {
+  0% { background-position: 0px 0px, 0px 0px; opacity: 0.25; }
+  50% { background-position: 120px 80px, -80px 120px; opacity: 0.35; }
+  100% { background-position: 240px 160px, -160px 240px; opacity: 0.25; }
+}
+
+@keyframes mb-scan {
+  0% { transform: translate3d(-120%, 0, 0); opacity: 0; }
+  20% { opacity: 0.6; }
+  50% { opacity: 0.25; }
+  100% { transform: translate3d(120%, 0, 0); opacity: 0; }
+}
+
+@keyframes mb-holo {
+  0% { transform: translate3d(0, 0, 0) rotate(-1deg); filter: hue-rotate(0deg) saturate(1.05); }
+  50% { transform: translate3d(0, -6px, 0) rotate(1deg); filter: hue-rotate(18deg) saturate(1.2); }
+  100% { transform: translate3d(0, 0, 0) rotate(-1deg); filter: hue-rotate(0deg) saturate(1.05); }
+}
+
 .mb-loginPage {
   min-height: 100vh;
   display: grid;
@@ -111,6 +130,19 @@ button:disabled {
   filter: blur(24px);
   opacity: 0.9;
   animation: mb-bg-pan 12s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.mb-loginPage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    repeating-linear-gradient(90deg, rgba(23, 107, 135, 0.18) 0px, rgba(23, 107, 135, 0.18) 1px, transparent 1px, transparent 56px),
+    repeating-linear-gradient(180deg, rgba(34, 197, 94, 0.10) 0px, rgba(34, 197, 94, 0.10) 1px, transparent 1px, transparent 56px);
+  mask-image: radial-gradient(circle at 50% 45%, rgba(0,0,0,0.8), transparent 65%);
+  -webkit-mask-image: radial-gradient(circle at 50% 45%, rgba(0,0,0,0.8), transparent 65%);
+  animation: mb-grid-pan 10s ease-in-out infinite;
   pointer-events: none;
 }
 
@@ -301,17 +333,27 @@ button:disabled {
 
 .mb-loginMedia {
   border-radius: 22px;
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.48);
   padding: 18px;
   display: grid;
   grid-template-rows: auto 1fr auto;
   gap: 14px;
   overflow: hidden;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.06);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.08);
   animation: mb-media-in 520ms ease-out both;
+  position: relative;
+}
+
+.mb-loginMedia::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 30% 10%, rgba(23,107,135,0.22), transparent 50%),
+    radial-gradient(circle at 70% 90%, rgba(59,130,246,0.16), transparent 55%);
+  pointer-events: none;
 }
 
 .mb-loginMediaTop {
@@ -343,18 +385,41 @@ button:disabled {
 .mb-loginGifFrame {
   border-radius: 18px;
   overflow: hidden;
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.10);
   background: rgba(0, 0, 0, 0.04);
-  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.10);
   position: relative;
+}
+
+.mb-loginGifFrame::before {
+  content: "";
+  position: absolute;
+  inset: -50%;
+  background: conic-gradient(from 120deg, rgba(23,107,135,0.22), rgba(13,146,118,0.16), rgba(59,130,246,0.14), rgba(23,107,135,0.22));
+  filter: blur(22px);
+  opacity: 0.6;
+  animation: mb-ring 14s linear infinite;
+  pointer-events: none;
 }
 
 .mb-loginGifFrame::after {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(120deg, rgba(23,107,135,0.22), transparent 45%),
-    linear-gradient(0deg, rgba(0,0,0,0.10), transparent 35%);
+  background:
+    linear-gradient(120deg, rgba(23,107,135,0.22), transparent 45%),
+    linear-gradient(0deg, rgba(0,0,0,0.12), transparent 35%),
+    repeating-linear-gradient(180deg, rgba(255,255,255,0.10) 0px, rgba(255,255,255,0.10) 1px, transparent 1px, transparent 4px);
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+.mb-loginGifFrame .mb-loginScan {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
+  opacity: 0;
+  animation: mb-scan 3.8s ease-in-out infinite;
   pointer-events: none;
 }
 
@@ -363,8 +428,41 @@ button:disabled {
   height: 100%;
   display: block;
   object-fit: cover;
-  animation: mb-soft-zoom 12s ease-in-out infinite;
+  animation: mb-soft-zoom 14s ease-in-out infinite;
   transform-origin: center;
+  filter: contrast(1.05) saturate(1.1);
+}
+
+.mb-loginHolo {
+  margin-top: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 16px;
+  border: 1px solid rgba(0,0,0,0.08);
+  background: rgba(255,255,255,0.55);
+  box-shadow: 0 16px 40px rgba(0,0,0,0.08);
+}
+
+.mb-loginHoloGif {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  object-fit: cover;
+  box-shadow: 0 10px 22px rgba(23,107,135,0.22);
+  animation: mb-holo 7.2s ease-in-out infinite;
+}
+
+.mb-loginHoloText {
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  background: linear-gradient(90deg, #176B87, #0D9276, #1D4ED8);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 .mb-loginMediaFoot {

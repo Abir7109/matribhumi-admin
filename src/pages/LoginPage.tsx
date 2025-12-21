@@ -23,10 +23,16 @@ export default function LoginPage() {
             <div className="mb-loginMediaKicker">Matribhumi Hajj Kafela</div>
             <div className="mb-loginMediaTitle">Admin Panel</div>
             <div className="mb-loginMediaSub">Manage packages, bookings and analytics.</div>
+
+            <div className="mb-loginHolo">
+              <img className="mb-loginHoloGif" src="/login/kaaba.gif" alt="" loading="eager" />
+              <div className="mb-loginHoloText">Secure</div>
+            </div>
           </div>
 
           <div className="mb-loginGifFrame">
             <img className="mb-loginGif" src="/login/kaaba.gif" alt="" loading="eager" />
+            <div className="mb-loginScan" aria-hidden="true" />
           </div>
 
           <div className="mb-loginMediaFoot">
